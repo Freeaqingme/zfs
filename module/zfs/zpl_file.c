@@ -34,6 +34,10 @@
 #include <sys/zfs_znode.h>
 #include <sys/zfs_project.h>
 
+// added for printk()
+#include <linux/module.h>
+#include <linux/kernel.h>
+
 
 static int
 zpl_open(struct inode *ip, struct file *filp)
@@ -999,6 +1003,22 @@ zpl_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	}
 }
 
+
+static loff_t zfsdev_remap_file_range(struct file *file_in, loff_t pos_in,
+                                      struct file *file_out, loff_t pos_out,
+                                      loff_t len, unsigned int remap_flags) {
+
+    // We only support FICLONE, not FICLONERANGE
+    if (pos_in != 0 || pos_out != 0 || len != 0) {
+        return (-ENOTSUP);
+    }
+
+    printk(KERN_CRIT "Goodbye world");
+    return 0;
+}
+
+
+
 #ifdef CONFIG_COMPAT
 static long
 zpl_compat_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
@@ -1055,6 +1075,8 @@ const struct file_operations zpl_file_operations = {
 #ifdef CONFIG_COMPAT
 	.compat_ioctl	= zpl_compat_ioctl,
 #endif
+    .remap_file_range = zfsdev_remap_file_range,
+
 };
 
 const struct file_operations zpl_dir_file_operations = {
